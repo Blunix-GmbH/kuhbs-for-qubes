@@ -1,0 +1,195 @@
+#!/bin/bash
+#
+# kuhbs executable
+# Manages Qubes OS virtual machines in logical groups called a kuhb
+
+
+
+## CONFIGURE BASH
+
+# Preserve original arguments
+declare -r KUHBS_ORIGINAL_ARGUMENTS="$@"
+
+# Enable BASH debug mode - prints every command or function before executing it (fancy version of set -x)
+if [[ "$1" == "-d" ]]; then
+    declare -r debug="true"
+    set -o xtrace
+else
+    declare -r debug="false"
+fi
+
+# Exit immediately if any command exits with exit status that is not zero
+set -o errexit
+
+# Any trap on ERR is inherited by shell functions, command substitutions, and commands executed in a subshell environment
+set -o errtrace
+
+# Treat unset variables as an error and exit immediately
+set -o nounset
+
+# Return value of a pipeline is the value of the last (rightmost) command to exit with a non-zero status, or zero if all commands in the pipeline exit successfully
+set -o pipefail
+
+# Disable pathname expansion
+set -o noglob
+
+# Trap errors and abort with bash debug info
+#function __error_handing__(){
+#    local -r last_status_code=$1;
+#    local -r error_line_number=$2;
+#    echo 1>&2 "Error - exited with status $last_status_code at line $error_line_number";
+#    perl -slne 'if($.+5 >= $ln && $.-4 <= $ln){ $_="$. $_"; s/$ln/">" x length($ln)/eg; s/^\D+.*?$/\e[1;31m$&\e[0m/g;  print}' -- -ln=$error_line_number $0
+#}
+#trap  '__error_handing__ $? $LINENO' ERR
+
+
+
+## EVALUATE -v OR -d
+# -v can be the first argument, which sets the --verbose argument for most qvm- commands and generates debug output
+if [[ "${1:-}" == "-v" ]] || [[ "${1:-}" == "-d" ]]; then
+    declare -r verbose="true"
+    declare -r qvm_verbose="--verbose"
+    shift
+else
+    declare -r verbose="false"
+    # This variable will be used like this:
+    # qvm-run $qvm_verbose
+    # it is used here without quotes so that we can turn qvm-foo --verbose on and off
+    declare -r qvm_verbose=""
+fi
+
+
+
+## SOURCE VARIABLES AND FUNCTIONS
+# Kuhbs main config file
+source /home/user/kuhbs/defaults.sh
+# Variety of helper functions
+source "$KUHBS_BASE_PATH/functions/helpers/launchers.sh"
+source "$KUHBS_BASE_PATH/functions/helpers/verify.sh"
+source "$KUHBS_BASE_PATH/functions/helpers/log.sh"
+source "$KUHBS_BASE_PATH/functions/helpers/exec.sh"
+source "$KUHBS_BASE_PATH/functions/helpers/manage-qube-type.sh"
+source "$KUHBS_BASE_PATH/functions/helpers/backup.sh"
+# Functions called by the arguments to the kuhbs executable
+source "$KUHBS_BASE_PATH/functions/arguments/remove.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/terminal.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/show.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/ls.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/dump.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/create.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/usage.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/restore.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/upgrade.sh"
+source "$KUHBS_BASE_PATH/functions/arguments/backup.sh"
+
+
+
+## PARSE FIRST ARGUMENT
+# Run commands to do not have arguments, or the second argument is not a kuhb
+
+# Parse first argument (or argument after -v)
+declare -r action="${1:-}"
+
+# Verify first argument
+if [[ -z "$action" ]]; then
+    kuhbs_usage
+    log kuhbs error "no arguments given"
+elif ! [[ "$action" = @(create|remove|ls|show|backup|backup-all|restore|upgrade|upgrade-all|terminal|dump) ]]; then
+    kuhbs_usage
+    log kuhbs error "no such argument: $action"
+fi
+
+
+# Parse argument
+case "$action" in
+
+    # List all defined kuhbs and their status
+    ls)
+        kuhbs_ls
+        exit 0
+        ;;
+
+    # Install upgrades for all Qubes VMs including dom0
+    upgrade-all)
+        kuhbs_upgrade_all
+        exit 0
+        ;;
+
+    # Install upgrades for all Qubes VMs including dom0
+    backup-all)
+        kuhbs_backup_all
+        exit 0
+        ;;
+
+    # Open terminal in a kuh
+    terminal)
+        declare -r kuh_name="${2:-}"
+        declare -r terminal_user="${3:-user}"
+        [[ -z "$kuh_name" ]] || [[ "$kuh_name" == "" ]] && log kuhbs error "no second argument given"
+        # doesnt work for dom0
+        [[ "$kuh_name" == "dom0" ]] && log kuhbs error "does not work for dom0"
+        verify_kuh_exists "$kuh_name" || log kuhbs error "No such kuh: $kuh_name"
+        [[ "$terminal_user" =~ (user|root) ]] || log kuhbs error "$terminal_user is not a valid user [USER/root]"
+        kuh_terminal "$kuh_name" "$terminal_user"
+        exit 0
+        ;;
+
+    # xl stop a kuh and dump the RAM and LVM volumes to /home/user/kuhbs-dump/
+    dump)
+        declare -r kuh_name="${2:-}"
+        [[ -z "$kuh_name" ]] || [[ "$kuh_name" == "" ]] && log kuhbs error "no second argument given"
+        verify_kuh_exists "$kuh_name" || log kuhbs error "No such kuh: $kuh_name"
+        kuh_dump "$kuh_name"
+        exit 0
+        ;;
+
+esac
+
+
+
+
+## PARSE SECOND ARGUMENT
+# Run commands that are for a specific kuhb
+
+# Verify second argument
+# The second argument generates variables for the kuhb, which are used throughout all functions.
+# Because of this they are written uppercase like a config variable.
+declare -r KUHB="${2:-}"
+# No second argument given
+[[ -z "$KUHB" ]] || [[ "$KUHB" == "" ]] && log kuhbs error "no second argument given"
+# Abstract the name and config dir path
+declare -r KUHB_PATH="$KUHBS_BASE_PATH/kuhbs/$KUHB"
+declare -r KUHB_NAME="$(echo $KUHB | sed 's@/@-@g')"
+# Check if the kuhb's config.sh file is present
+[[ -f "$KUHB_PATH/config.sh" ]] || log kuhbs error "kuhb configuration file not found: $KUHB_PATH/config.sh"
+# Source kuhb config file
+source "$KUHB_PATH/config.sh"
+# Merge config variables: associative arrays for qvm-prefs, qvm-service and qvm-features
+source /home/user/kuhbs/functions/merge-arrays.sh
+
+
+
+# Parse arguments to select action
+case "$action" in
+
+    # Run create script
+    create) kuhb_create ;;
+
+    # Run kuhbs_ls on a specific kuhb
+    show) kuhb_show;;
+
+    # remove kuhb
+    remove) kuhb_remove ;;
+
+    # Create backup for a kuhb
+    backup) kuhb_backup ;;
+
+    # Restore backup for a kuhb
+    restore) kuhb_restore ;;
+
+    # Execute upgrade scripts
+    upgrade) kuhb_upgrade ;;
+
+    *) log kuhbs error "No such command" ;;
+
+esac

@@ -1,0 +1,1 @@
+This directory contains BASH scripts that can be symlinked to `kuhbs/<my-kuhb>/{tpl,app,sta}/scripts/`. They will be executed during the creation of the respective kuh (tpl: TemplateVM, app: AppVM, sta: StandaloneVM).

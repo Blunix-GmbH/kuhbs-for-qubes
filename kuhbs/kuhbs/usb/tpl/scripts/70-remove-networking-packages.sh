@@ -1,0 +1,1 @@
+/home/user/kuhbs/setup-scripts/remove-networking-packages.sh

@@ -1,0 +1,192 @@
+# /home/user/.config/i3wm/config for kuhbs. Please read and modify.
+
+
+
+## WORKSPACES ## 
+ 
+# Workspaces Super + 1-0
+bindsym $mod+1 workspace "1|AIR"
+bindsym $mod+2 workspace "2|SURF"
+bindsym $mod+3 workspace "3|CMD"
+bindsym $mod+4 workspace "4|CMD"
+bindsym $mod+5 workspace "5|CMD"
+bindsym $mod+6 workspace "6|CMD"
+bindsym $mod+7 workspace 7
+bindsym $mod+8 workspace "8|PROM"
+bindsym $mod+9 workspace 9
+bindsym $mod+0 workspace 10
+# Workspaces Super F1-F12 
+bindsym $mod+F1 workspace "11|KUHBS"
+bindsym $mod+F2 workspace "12|CHECKS"
+bindsym $mod+F3 workspace 13
+bindsym $mod+F4 workspace 14
+bindsym $mod+F5 workspace 15
+bindsym $mod+F6 workspace 16
+bindsym $mod+F7 workspace 17
+bindsym $mod+F8 workspace 18
+bindsym $mod+F9 workspace "19|MAIL"
+bindsym $mod+F10 workspace 20
+bindsym $mod+F11 workspace "21|CHROME"
+bindsym $mod+F12 workspace "22|CHAT"
+
+# Keybinds to move the active window to a workspace
+bindsym $mod+Shift+exclam move workspace "1|AIR"
+bindsym $mod+Shift+at move workspace "2|SURF"
+bindsym $mod+Shift+numbersign move workspace "3|CMD"
+bindsym $mod+Shift+dollar move workspace "4|CMD"
+bindsym $mod+Shift+percent move workspace "5|CMD"
+bindsym $mod+Shift+asciicircum move workspace "6|CMD"
+bindsym $mod+Shift+ampersand move workspace 7
+bindsym $mod+Shift+asterisk move workspace "8|PROM"
+bindsym $mod+Shift+parenleft move workspace 9
+bindsym $mod+Shift+parenright move workspace 10
+bindsym $mod+Shift+F1 move workspace "11|KUHBS"
+bindsym $mod+Shift+F2 move workspace "12|CHECKS"
+bindsym $mod+Shift+F3 move workspace 13
+bindsym $mod+Shift+F4 move workspace 14
+bindsym $mod+Shift+F5 move workspace 15
+bindsym $mod+Shift+F6 move workspace 16
+bindsym $mod+Shift+F7 move workspace 17
+bindsym $mod+Shift+F8 move workspace 18
+bindsym $mod+Shift+F9 move workspace "19|MAIL"
+bindsym $mod+Shift+F10 move workspace 20
+bindsym $mod+Shift+F11 move workspace "21|CHROME"
+bindsym $mod+Shift+F12 move workspace "22|CHAT"
+ 
+# Automatically move a window to a workspace when it opens based on the windows class (use the tool xprop to determine the "class")
+#
+# kuhbs defaults
+# "*kuhbs*" VMs (kuhbs-net-*, kuhbs-usb) are always on 11
+assign [class="kuhbs"] "11|KUHBS"
+# kuhbs *checks* VMs are always on 12
+assign [class="checks"] "12|CHECKS"
+# Dirty hack as the unnamed disposables are mostly browsers
+assign [class="disp"] "2|SURF"
+# TODO doesnt work because of the ":"
+#assign [class="app-cus:chromium"] 21
+#assign [class="app-blunix:chromium"] 21
+# Avoids screen size fingerprinting in the torbrowser - always let the window define its own border sizes and dont scale or maximize it
+for_window [title="Tor Browser"] floating enable
+#
+# Automatically updated by the kuhbs executable. DO NOT modify the kuhbs_managed_assign_begin and kuhbs_managed_assign_end lines!!
+# kuhbs_managed_assign_begin
+assign [class="airgap"] "1|AIR"
+assign [class="surf"] "2|SURF"
+assign [class="LibreWolf"] "2|SURF"
+assign [class="firefox"] "2|SURF"
+assign [class="mail"] "19|MAIL"
+assign [class="Chromium"] "21|CHROME"
+assign [class="element"] "22|CHAT"
+assign [class="signal"] "22|CHAT"
+# kuhbs_managed_assign_end
+
+
+
+
+
+
+## KEYBINDS ##
+
+# General
+set $mod Mod4
+#font -misc-fixed-medium-r-normal--13-120-75-75-C-70-iso10646-1
+font pango:DejuVu Sans Mono 12
+ 
+# Window operations
+new_window 1pixel
+bindsym $mod+c kill
+bindsym $mod+t floating toggle
+bindsym $mod+space focus mode_toggle
+floating_modifier $mod
+bindsym $mod+r mode "resize"
+mode "resize" {
+    bindsym j resize shrink left 10 px or 10 ppt
+    bindsym Shift+J resize grow left 10 px or 10 ppt
+    bindsym k resize shrink down 10 px or 10 ppt
+    bindsym Shift+K resize grow down 10 px or 10 ppt
+    bindsym l resize shrink up 10 px or 10 ppt
+    bindsym Shift+L resize grow up 10 px or 10 ppt
+    bindsym semicolon resize shrink right 10 px or 10 ppt
+    bindsym Shift+colon resize grow right 10 px or 10 ppt
+    bindsym Return mode "default"
+    bindsym Escape mode "default"
+}
+ 
+# Launch programs in dom0
+bindsym $mod+Shift+Return exec --no-startup-id /home/user/kuhbs/scripts/i3-kuhbs-terminal.sh
+bindsym $mod+Return       exec --no-startup-id /home/user/kuhbs/scripts/i3-kuhbs-terminal.sh dom0
+bindsym $mod+p            exec --no-startup-id /home/user/kuhbs/scripts/i3-kuhbs-dmenu.sh
+bindsym $mod+d            exec --no-startup-id /home/user/kuhbs/scripts/i3-edit-config.sh
+bindsym $mod+Shift+p      exec --no-startup-id xfce4-appfinder
+bindsym $mod+m            exec --no-startup-id /home/user/kuhbs/scripts/i3-copy.sh
+bindsym $mod+Shift+m      exec --no-startup-id /home/user/kuhbs/scripts/i3-paste.sh
+bindsym $mod+u            exec --no-startup-id gnome-screenshot
+bindsym $mod+y            exec --no-startup-id i3lock --dpms --no-unlock-indicator --ignore-empty-password --show-failed-attempts
+
+# Layout operations
+workspace_layout tabbed
+bindsym $mod+e layout default
+bindsym $mod+w layout tabbed
+bindsym $mod+f fullscreen
+bindsym $mod+Shift+H move left
+bindsym $mod+Shift+J move down
+bindsym $mod+Shift+K move up
+bindsym $mod+Shift+L move right
+bindsym $mod+h split h
+bindsym $mod+v split v
+
+# Focus
+bindsym $mod+j focus left
+bindsym $mod+k focus down
+bindsym $mod+l focus up
+bindsym $mod+semicolon focus right
+bindsym $mod+a focus parent
+
+# i3 management
+bindsym $mod+Shift+Q exit
+bindsym $mod+Shift+C reload
+bindsym $mod+Shift+R restart
+ 
+
+
+## I3BAR SETTINGS ##
+
+bar {
+  status_command	i3status -c /home/user/.config/i3/i3status.conf
+  position              bottom
+  mode                  dock
+  workspace_buttons     yes
+  # Dissabled to get icons of running apps (as in keep commented out)
+  #tray_output          default
+  font pango:DejaVu Sans Mono 12 bold
+  colors {
+    # purple
+    background  #AA42f5
+    # green
+    #background  #17a602
+    statusline  #ffffff
+    separator   #ffffff
+    focused_workspace  #000000 #ffffff
+    active_workspace   #ffffff #333333
+    # blue
+    inactive_workspace #000000 #abb8f5
+    # purple
+    #inactive_workspace #000000 #AA42f5
+    urgent_workspace   #ffffff #900000
+  }
+}
+
+
+
+## START ON I3 INITIALIZATION ##
+
+# Start system upgrade
+exec --no-startup-id i3-msg 'exec --no-startup-id /usr/bin/xfce4-terminal --command=/home/user/kuhbs/scripts/i3-kuhbs-init.sh'
+
+# Start notifcation daemon
+exec /usr/lib64/xfce4/notifyd/xfce4-notifyd
+
+# Make sure all xdg autostart entries are started, this is (among other things), necessary to make sure transient vm's come up
+exec --no-startup-id qubes-i3-xdg-autostart
+assign [class="surf"] 2
+assign [class="checks"] 12

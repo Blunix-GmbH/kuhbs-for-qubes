@@ -1,0 +1,5 @@
+kuhbs/*
+dumps/*
+kuhbs/kuhbs/net/gateway/tpl/templates/wireguard/configs/*
+!kuhbs/kuhbs/
+!kuhbs/README.md
